@@ -1,8 +1,45 @@
+from collections import defaultdict
 from player_divercite import PlayerDivercite
 from seahorse.game.action import Action
 from seahorse.game.game_state import GameState
 from game_state_divercite import GameStateDivercite
 from seahorse.utils.custom_exceptions import MethodNotImplementedError
+
+import math
+
+class MCTSNode():
+    def __init__(self, state: GameStateDivercite, parent=None, action=None, playerId=None):
+        self.state = state
+        self.parent = parent
+        self.action = action
+        self.children = []
+        self.nVisits = 0
+        self.nWins = 0
+        self.untriedActions = list(state.generate_possible_light_actions())
+        self.playerId = state.next_player.get_id() if state else playerId
+
+    def addChild(self, state, action):
+        child = MCTSNode(state=state, parent=self, action=action)
+        if action in self.untriedActions:
+            self.untriedActions.remove(action)
+        self.children.append(child)
+        return child
+    
+    def isFullyExpanded(self):
+        return len(self.untriedActions) == 0
+    
+    def expand(self):
+        action = self.untriedActions.pop()
+        nextState = self.state.apply_action(action)
+        return self.addChild(state=nextState, parent=self, action=action)
+    
+    def backpropagate(self, result, playerId):
+        self.nVisits += 1
+        self.nWins += result
+        if self.parent:
+            self.parent.backpropagate(result if self.playerId == playerId else 1 - result)
+
+
 
 class MyPlayer(PlayerDivercite):
     """
@@ -37,4 +74,7 @@ class MyPlayer(PlayerDivercite):
         """
 
         #TODO
-        raise MethodNotImplementedError()
+        # raise MethodNotImplementedError()
+
+    # def selectChild(self, explorationWeight=1.41421356237):
+    #      choices_weights = [(child.nPoints / child.n()) + explorationWeight * math.sqrt((2 * math.log(self.n()) / child.n())) for child in self.children]
