@@ -35,5 +35,5 @@ class MyPlayer(PlayerDivercite):
             Action: Randomly selected feasible action
         """
         possible_actions = current_state.get_possible_light_actions()
-
+        print(possible_actions)
         return random.choice(list(possible_actions))

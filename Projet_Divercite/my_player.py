@@ -1,4 +1,5 @@
 from collections import defaultdict
+import random
 from player_divercite import PlayerDivercite
 from seahorse.game.action import Action
 from seahorse.game.game_state import GameState
@@ -79,9 +80,32 @@ class MCTSNode():
         Will add the result recursively to all the parent nodes, of a given node, up to the root of the tree
         """
         self.nVisits += 1
-        self.nWins += result
+        self.nWins += result if self.playerId == playerId else 1 - result
         if self.parent:
-            self.parent.backpropagate(result if self.playerId == playerId else 1 - result)
+            self.parent.backpropagate(playerId)
+    
+    def simulate(self, ownerId, simulationDepthLimit=20):
+        """
+        Knowledge based self-play simulation from the current node to the determine the outcome after a given number of movements.
+        It uses the scoring rules of Diversite as a guide in the simulation
+        """
+        tmpState = self.state
+        currDepth = 0
+
+        while not tmpState.is_done() and currDepth < simulationDepthLimit:
+            possibleActions = list(tmpState.generate_possible_light_actions())
+            if not possibleActions:
+                break
+
+            action = self.knowledgeBasedAction(tmpState, possibleActions)
+            tmpState.apply_action(action)
+            depth += 1
+
+        if not tmpState.is_done() and depth >= simulationDepthLimit:
+            return self.evaluateNonTerminalPosition(tmpState, ownerId)
+
+        return self.scoreTerminalState(tmpState, ownerId)
+    
 
 
 
@@ -119,6 +143,3 @@ class MyPlayer(PlayerDivercite):
 
         #TODO
         # raise MethodNotImplementedError()
-
-    # def selectChild(self, explorationWeight=1.41421356237):
-    #      choices_weights = [(child.nPoints / child.n()) + explorationWeight * math.sqrt((2 * math.log(self.n()) / child.n())) for child in self.children]
