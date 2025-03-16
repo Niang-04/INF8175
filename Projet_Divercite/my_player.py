@@ -32,6 +32,26 @@ class MCTSNode():
         action = self.untriedActions.pop()
         nextState = self.state.apply_action(action)
         return self.addChild(state=nextState, parent=self, action=action)
+
+
+    def selectChild(self, explorationWeight = 1.41421356237):
+        bestChild = None
+        highestUcbValue = float('-inf')
+
+        for child in self.children:
+            if child.nVisits == 0:
+                return child
+            
+            exploitationTerm = child.nWins / child.nVisits
+            explorationTerm = explorationWeight * math.sqrt(math.log(self.nVisits) / child.nVisits)
+            ucbValue = exploitationTerm + explorationTerm
+
+            if ucbValue > highestUcbValue:
+                highestUcbValue = ucbValue
+                bestChild = child
+        
+        return bestChild
+
     
     def backpropagate(self, result, playerId):
         self.nVisits += 1
