@@ -19,6 +19,9 @@ class MCTSNode():
         self.playerId = state.next_player.get_id() if state else playerId
 
     def addChild(self, state, action):
+        """
+        Adds a child node to the current node
+        """
         child = MCTSNode(state=state, parent=self, action=action)
         if action in self.untriedActions:
             self.untriedActions.remove(action)
@@ -26,15 +29,33 @@ class MCTSNode():
         return child
     
     def isFullyExpanded(self):
+        """
+        Checks if all the different possible actions from a given node have been tried at least once
+        """
         return len(self.untriedActions) == 0
     
+    def isTerminalAction(self):
+        """
+        Verifies if the current node represents a terminal game state
+        """
+        return self.state.is_done()
+    
     def expand(self):
+        """
+        Expands the current node by selecting an untried action and adding it as a child to the current node
+        """
+        if not self.untriedActions or self.isTerminalAction():
+            return self
+
         action = self.untriedActions.pop()
         nextState = self.state.apply_action(action)
         return self.addChild(state=nextState, parent=self, action=action)
 
 
     def selectChild(self, explorationWeight = 1.41421356237):
+        """
+        Selects a child node using the UCB1 formula and exploration principles
+        """
         bestChild = None
         highestUcbValue = float('-inf')
 
@@ -54,6 +75,9 @@ class MCTSNode():
 
     
     def backpropagate(self, result, playerId):
+        """
+        Will add the result recursively to all the parent nodes, of a given node, up to the root of the tree
+        """
         self.nVisits += 1
         self.nWins += result
         if self.parent:
